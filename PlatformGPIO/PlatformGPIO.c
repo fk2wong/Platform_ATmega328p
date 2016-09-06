@@ -52,6 +52,71 @@ typedef struct
 static const PlatformGPIOStruct_t platformGPIOList[] =
 {
 	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin2,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin3,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin4,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin5,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin6,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin7,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin0,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin1,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin0,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin1,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin2,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin3,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin4,
+		.initialConfig = PlatformGPIOConfig_InputPullUp,
+	},	
+	{
 		.portName      = PlatformPortB,
 		.pin           = PlatformPin5,
 		.initialConfig = PlatformGPIOConfig_Output,
@@ -60,6 +125,16 @@ static const PlatformGPIOStruct_t platformGPIOList[] =
 
 static void _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig );
 static void _PlatformGPIO_Toggle(    PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+
+void PlatformGPIO_InitAllGPIOs( void )
+{
+	for ( uint8_t i = 0; i < ( sizeof( platformGPIOList ) / sizeof( PlatformGPIOStruct_t )); i++ )
+	{
+		const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ i ];
+		
+		_PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, gpioStruct->initialConfig );
+	}
+}
 
 void PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfig )
 {

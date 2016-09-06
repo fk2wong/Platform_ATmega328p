@@ -9,10 +9,5 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
-typedef enum 
-{
-	PlatformGPIO_PTB5,
-} PlatformGPIO_t;
-
 
 #endif /* PLATFORM_H_ */
