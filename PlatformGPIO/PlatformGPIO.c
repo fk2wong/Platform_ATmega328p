@@ -9,11 +9,19 @@
 #include "Platform.h"
 #include <stdint.h>
 
+//================//
+//    Defines     //
+//================//
+
 #define PLATFORM_GPIO_REG_BASE   ( 0x20 )
 #define PLATFORM_GPIO_REG_OFFSET ( 0x03 )
 
 #define PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( PORT ) ( PlatformPortRegGroup_t* )( PLATFORM_GPIO_REG_BASE + ( PORT ) * PLATFORM_GPIO_REG_OFFSET )
 #define PLATFORM_GPIO_GET_PIN_MASK( PIN )            ( uint8_t )( 1 << ( PIN ))
+
+//================//
+//    Typedefs    //
+//================//
 
 typedef struct 
 {
@@ -48,6 +56,10 @@ typedef struct
 	uint8_t              pin;            // See iom328p.h for pin defines
 	PlatformGPIOConfig_t initialConfig;  // See PlatformGPIO.h
 } PlatformGPIOStruct_t;
+
+//===========================//
+//    Structs & Variables    //
+//===========================//
 
 static const PlatformGPIOStruct_t platformGPIOList[] =
 {
@@ -123,8 +135,19 @@ static const PlatformGPIOStruct_t platformGPIOList[] =
 	},
 };
 
-static void _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig );
-static void _PlatformGPIO_Toggle(    PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+//====================================//
+//    Static Function Declarations    //
+//====================================//
+
+static void _PlatformGPIO_Configure(  PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig );
+static void _PlatformGPIO_OutputHigh( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static void _PlatformGPIO_OutputLow(  PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static void _PlatformGPIO_Toggle(     PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static bool _PlatformGPIO_GetInput(   PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+
+//====================================//
+//    Public Function Definitions     //
+//====================================//
 
 void PlatformGPIO_InitAllGPIOs( void )
 {
@@ -143,6 +166,19 @@ void PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfi
 	_PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, inConfig );
 }
 
+void PlatformGPIO_OutputHigh( PlatformGPIO_t inGPIO )
+{
+	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
+	
+	_PlatformGPIO_OutputHigh( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+}
+
+void PlatformGPIO_OutputLow( PlatformGPIO_t inGPIO )
+{
+	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
+	
+	_PlatformGPIO_OutputLow( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+}
 
 void PlatformGPIO_Toggle( PlatformGPIO_t inGPIO )
 {
@@ -150,6 +186,17 @@ void PlatformGPIO_Toggle( PlatformGPIO_t inGPIO )
 	
 	_PlatformGPIO_Toggle( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
 }
+
+bool PlatformGPIO_GetInput( PlatformGPIO_t inGPIO )
+{
+	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
+	
+	return _PlatformGPIO_GetInput( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+}
+
+//====================================//
+//    Static Function Definitions     //
+//====================================//
 
 static void _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig )
 {
@@ -182,7 +229,22 @@ static void _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t
 	}
 }
 
+static void _PlatformGPIO_OutputHigh( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+{
+	inRegGroup->PORTDATA |= PLATFORM_GPIO_GET_PIN_MASK( inPin );
+}
+
+static void _PlatformGPIO_OutputLow( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+{
+	inRegGroup->PORTDATA &= ~PLATFORM_GPIO_GET_PIN_MASK( inPin );
+}
+
 static void _PlatformGPIO_Toggle( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
 {
 	inRegGroup->PORTDATA ^= PLATFORM_GPIO_GET_PIN_MASK( inPin );
+}
+
+static bool _PlatformGPIO_GetInput( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+{
+	return inRegGroup->PINCTL & PLATFORM_GPIO_GET_PIN_MASK( inPin );
 }
