@@ -7,6 +7,7 @@
 
 #include "PlatformGPIO.h"
 #include "Platform.h"
+#include "require_macros.h"
 #include <stdint.h>
 
 //================//
@@ -16,8 +17,11 @@
 #define PLATFORM_GPIO_REG_BASE   ( 0x20 )
 #define PLATFORM_GPIO_REG_OFFSET ( 0x03 )
 
-#define PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( PORT ) ( PlatformPortRegGroup_t* )( PLATFORM_GPIO_REG_BASE + ( PORT ) * PLATFORM_GPIO_REG_OFFSET )
-#define PLATFORM_GPIO_GET_PIN_MASK( PIN )            ( uint8_t )( 1 << ( PIN ))
+#define PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( PORT ) ( PlatformPortRegGroup_t* )( PLATFORM_GPIO_REG_BASE + ( PORT ) * PLATFORM_GPIO_REG_OFFSET )
+#define PLATFORM_GPIO_GET_PIN_MASK( PIN )                  ( uint8_t )( 1 << ( PIN ))
+
+#define PLATFORM_GPIO_DIR_INPUT  ( 0 )
+#define PLATFORM_GPIO_DIR_OUTPUT ( 1 )
 
 //================//
 //    Typedefs    //
@@ -139,67 +143,79 @@ static const PlatformGPIOStruct_t platformGPIOList[] =
 //    Static Function Declarations    //
 //====================================//
 
-static void _PlatformGPIO_Configure(  PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig );
-static void _PlatformGPIO_OutputHigh( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
-static void _PlatformGPIO_OutputLow(  PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
-static void _PlatformGPIO_Toggle(     PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
-static bool _PlatformGPIO_GetInput(   PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static PlatformStatus _PlatformGPIO_Configure(  PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig );
+static PlatformStatus _PlatformGPIO_OutputHigh( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static PlatformStatus _PlatformGPIO_OutputLow(  PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static PlatformStatus _PlatformGPIO_Toggle(     PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
+static PlatformStatus _PlatformGPIO_GetInput(   PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, bool *const outLogicLevel );
+
+static inline bool _PlatformGPIO_IsConfiguredAsOutput( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin );
 
 //====================================//
 //    Public Function Definitions     //
 //====================================//
 
-void PlatformGPIO_InitAllGPIOs( void )
+PlatformStatus PlatformGPIO_InitAllGPIOs( void )
 {
+	PlatformStatus status;
+	
 	for ( uint8_t i = 0; i < ( sizeof( platformGPIOList ) / sizeof( PlatformGPIOStruct_t )); i++ )
 	{
 		const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ i ];
 		
-		_PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, gpioStruct->initialConfig );
+		status = _PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, gpioStruct->initialConfig );
+		require_noerr_quiet( status, exit );
 	}
+	
+exit:
+	return status;
 }
 
-void PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfig )
+PlatformStatus PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfig )
 {
 	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
 	
-	_PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, inConfig );
+	return _PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, inConfig );
 }
 
-void PlatformGPIO_OutputHigh( PlatformGPIO_t inGPIO )
+PlatformStatus PlatformGPIO_OutputHigh( PlatformGPIO_t inGPIO )
 {
 	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
 	
-	_PlatformGPIO_OutputHigh( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+	return _PlatformGPIO_OutputHigh( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
 }
 
-void PlatformGPIO_OutputLow( PlatformGPIO_t inGPIO )
+PlatformStatus PlatformGPIO_OutputLow( PlatformGPIO_t inGPIO )
 {
 	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
 	
-	_PlatformGPIO_OutputLow( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+	return _PlatformGPIO_OutputLow( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
 }
 
-void PlatformGPIO_Toggle( PlatformGPIO_t inGPIO )
+PlatformStatus PlatformGPIO_Toggle( PlatformGPIO_t inGPIO )
 {
 	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
 	
-	_PlatformGPIO_Toggle( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+	return _PlatformGPIO_Toggle( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
 }
 
-bool PlatformGPIO_GetInput( PlatformGPIO_t inGPIO )
+PlatformStatus PlatformGPIO_GetInput( PlatformGPIO_t inGPIO, bool *const outLogicLevel )
 {
 	const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ inGPIO ];
 	
-	return _PlatformGPIO_GetInput( PLATFORM_GPIO_GET_REG_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin );
+	return _PlatformGPIO_GetInput( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, outLogicLevel );
 }
 
 //====================================//
 //    Static Function Definitions     //
 //====================================//
 
-static void _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig )
+static PlatformStatus _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, PlatformGPIOConfig_t inConfig )
 {
+	PlatformStatus status = PlatformStatus_Failed;
+	
+	require_quiet( inRegGroup, exit );
+	
 	switch ( inConfig )
 	{
 		case PlatformGPIOConfig_Output:
@@ -227,24 +243,87 @@ static void _PlatformGPIO_Configure( PlatformPortRegGroup_t* inRegGroup, uint8_t
 			break;
 		}
 	}
+	
+	status = PlatformStatus_Success;
+exit:
+	return status;
 }
 
-static void _PlatformGPIO_OutputHigh( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+static PlatformStatus _PlatformGPIO_OutputHigh( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
 {
+	PlatformStatus status = PlatformStatus_Failed;
+	bool isConfiguredAsOutput;
+		
+	require_quiet( inRegGroup, exit );
+		
+	// Verify the GPIO is configured as output
+	isConfiguredAsOutput = _PlatformGPIO_IsConfiguredAsOutput( inRegGroup, inPin );
+	require_quiet( isConfiguredAsOutput, exit );
+		
 	inRegGroup->PORTDATA |= PLATFORM_GPIO_GET_PIN_MASK( inPin );
+	
+	status = PlatformStatus_Success;
+exit:
+	return status;
 }
 
-static void _PlatformGPIO_OutputLow( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+static PlatformStatus _PlatformGPIO_OutputLow( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
 {
+	PlatformStatus status = PlatformStatus_Failed;
+	bool isConfiguredAsOutput;
+		
+	require_quiet( inRegGroup, exit );
+		
+	// Verify the GPIO is configured as output
+	isConfiguredAsOutput = _PlatformGPIO_IsConfiguredAsOutput( inRegGroup, inPin );
+	require_quiet( isConfiguredAsOutput, exit );
+		
 	inRegGroup->PORTDATA &= ~PLATFORM_GPIO_GET_PIN_MASK( inPin );
+	
+	status = PlatformStatus_Success;
+exit:
+	return status;
 }
 
-static void _PlatformGPIO_Toggle( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+static PlatformStatus _PlatformGPIO_Toggle( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
 {
+	PlatformStatus status = PlatformStatus_Failed;
+	bool isConfiguredAsOutput;
+		
+	require_quiet( inRegGroup, exit );
+	
+	// Verify the GPIO is configured as output
+	isConfiguredAsOutput = _PlatformGPIO_IsConfiguredAsOutput( inRegGroup, inPin );
+	require_quiet( isConfiguredAsOutput, exit );
+	
 	inRegGroup->PORTDATA ^= PLATFORM_GPIO_GET_PIN_MASK( inPin );
+	
+	status = PlatformStatus_Success;
+exit:
+	return status;
 }
 
-static bool _PlatformGPIO_GetInput( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+static PlatformStatus _PlatformGPIO_GetInput( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin, bool *const outLogicLevel )
 {
-	return inRegGroup->PINCTL & PLATFORM_GPIO_GET_PIN_MASK( inPin );
+	PlatformStatus status = PlatformStatus_Failed;
+	bool isConfiguredAsOutput;
+	
+	require_quiet( inRegGroup,    exit );
+	require_quiet( outLogicLevel, exit );
+	
+	// Verify the GPIO is configured as input
+	isConfiguredAsOutput = _PlatformGPIO_IsConfiguredAsOutput( inRegGroup, inPin );
+	require_quiet( !isConfiguredAsOutput, exit );
+	
+	// Get the intput level
+	*outLogicLevel = inRegGroup->PINCTL & PLATFORM_GPIO_GET_PIN_MASK( inPin );
+	
+	status = PlatformStatus_Success;
+exit:
+	return status;
+}
+
+static inline bool _PlatformGPIO_IsConfiguredAsOutput( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
+{
+	return (( inRegGroup->DIR & PLATFORM_GPIO_GET_PIN_MASK( inPin )) == PLATFORM_GPIO_DIR_OUTPUT ) ? true : false;
 }

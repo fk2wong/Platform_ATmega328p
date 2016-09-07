@@ -9,5 +9,6 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
+#include "PlatformStatus.h"
 
 #endif /* PLATFORM_H_ */

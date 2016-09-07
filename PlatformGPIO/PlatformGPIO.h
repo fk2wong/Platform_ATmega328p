@@ -39,8 +39,10 @@ typedef enum
 
 /*!
  *\brief    Inits all GPIOs to their default setting, specified in PlatformGPIO.c
+ *
+ *\return   PlatformStatus_Success if all GPIOs were init successfully. PlatformStatus_Failed if anything failed.
  */
-void PlatformGPIO_InitAllGPIOs( void );
+PlatformStatus PlatformGPIO_InitAllGPIOs( void );
 
 /*!
  *\brief    Configures a GPIO to a setting. 
@@ -48,35 +50,45 @@ void PlatformGPIO_InitAllGPIOs( void );
  *\param    inGPIO   - GPIO pin to configure.
  *\param    inConfig - New configuration for the GPIO.
  *
+ *\return   PlatformStatus_Success if configured successfully. PlatformStatus_Failed if anything failed.
  */
-void PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfig );
+PlatformStatus PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfig );
 
 /*!
- *\brief    Outputs logic high on a GPIO. Ensure that the GPIO is configured to be an output prior to this call.
+ *\brief    Outputs logic high on a GPIO. The GPIO should be configured as output prior to this call.
  *
  *\param    inGPIO - GPIO pin to output HIGH.
+ *
+ *\return   PlatformStatus_Success if output successfully. PlatformStatus_Failed if anything failed.
  */
-void PlatformGPIO_OutputHigh( PlatformGPIO_t inGPIO );
+PlatformStatus PlatformGPIO_OutputHigh( PlatformGPIO_t inGPIO );
 
 /*!
- *\brief    Outputs logic low on a GPIO. Ensure that the GPIO is configured to be an output prior to this call.
+ *\brief    Outputs logic low on a GPIO. The GPIO should be configured as output prior to this call.
  *
  *\param    inGPIO - GPIO pin to output LOW.
+ *
+ *\return   PlatformStatus_Success if output successfully. PlatformStatus_Failed if anything failed.
  */
-void PlatformGPIO_OutputLow( PlatformGPIO_t inGPIO );
+PlatformStatus PlatformGPIO_OutputLow( PlatformGPIO_t inGPIO );
 
 /*!
- *\brief    Toggles the output on a GPIO. Ensure that the GPIO is configured to be an output prior to this call.
+ *\brief    Toggles the output on a GPIO. The GPIO should be configured as output prior to this call.
  *
  *\param    inGPIO - GPIO pin to toggle.
+ *
+ *\return   PlatformStatus_Success if toggled successfully. PlatformStatus_Failed if anything failed.
  */
-void PlatformGPIO_Toggle( PlatformGPIO_t inGPIO );
+PlatformStatus PlatformGPIO_Toggle( PlatformGPIO_t inGPIO );
 
 /*!
  *\brief    Read the logic level on a GPIO configured as input.
  *
- *\param    inGPIO - GPIO pin to read.
+ *\param    inGPIO        - GPIO pin to read.
+ *\param    outLogicLevel - Logic level read on the GPIO.
+ *
+ *\return   PlatformStatus_Success if read successfully. PlatformStatus_Failed if anything failed.
  */
-bool PlatformGPIO_GetInput( PlatformGPIO_t inGPIO );
+PlatformStatus PlatformGPIO_GetInput( PlatformGPIO_t inGPIO, bool *const outLogicLevel );
 
 #endif /* PLATFORMGPIO_H_ */
