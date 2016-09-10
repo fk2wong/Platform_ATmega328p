@@ -20,9 +20,6 @@
 #define PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( PORT ) ( PlatformPortRegGroup_t* )( PLATFORM_GPIO_REG_BASE + ( PORT ) * PLATFORM_GPIO_REG_OFFSET )
 #define PLATFORM_GPIO_GET_PIN_MASK( PIN )                  ( uint8_t )( 1 << ( PIN ))
 
-#define PLATFORM_GPIO_DIR_INPUT  ( 0 )
-#define PLATFORM_GPIO_DIR_OUTPUT ( 1 )
-
 //================//
 //    Typedefs    //
 //================//
@@ -325,5 +322,5 @@ exit:
 
 static inline bool _PlatformGPIO_IsConfiguredAsOutput( PlatformPortRegGroup_t* inRegGroup, uint8_t inPin )
 {
-	return (( inRegGroup->DIR & PLATFORM_GPIO_GET_PIN_MASK( inPin )) == PLATFORM_GPIO_DIR_OUTPUT ) ? true : false;
+	return ( inRegGroup->DIR & PLATFORM_GPIO_GET_PIN_MASK( inPin )) ? true : false;
 }
