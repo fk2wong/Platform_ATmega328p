@@ -6,7 +6,6 @@
  */ 
 
 #include "PlatformGPIO.h"
-#include "Platform.h"
 #include "require_macros.h"
 #include <stdint.h>
 

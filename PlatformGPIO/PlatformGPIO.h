@@ -9,7 +9,7 @@
 #ifndef PLATFORMGPIO_H_
 #define PLATFORMGPIO_H_
 
-#include "Platform.h"
+#include "PlatformStatus.h"
 #include <stdbool.h>
 
 typedef enum
