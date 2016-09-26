@@ -13,6 +13,9 @@ typedef enum
 {
 	PlatformStatus_Success = 0,
 	PlatformStatus_Failed,
+	PlatformStatus_NotSupported,
+	PlatformStatus_NotInitialized,
+	PlatformStatus_AlreadyInitialized,
 } PlatformStatus;
 
 

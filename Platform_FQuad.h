@@ -16,6 +16,7 @@
 #include "PlatformRingBuffer.h"
 #include "PlatformUART.h"
 #include "PlatformADC.h"
+#include "PlatformPWM.h"
 
 
 typedef enum 
@@ -44,5 +45,12 @@ typedef enum
 	FQuadADC_PadRightHorizontal = PlatformADC_ADC5,
 } FQuadADC_t;
 
+typedef enum
+{
+	FQuadPWM_MotorNW = PlatformPWM_0A,
+	FQuadPWM_MotorNE = PlatformPWM_0B,
+	FQuadPWM_MotorSE = PlatformPWM_2A,
+	FQuadPWM_MotorSW = PlatformPWM_2B,
+} FQuadPWM_t;
 
 #endif /* PLATFORM_FQUAD_H_ */
