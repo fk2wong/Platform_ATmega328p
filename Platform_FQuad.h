@@ -17,6 +17,7 @@
 #include "PlatformUART.h"
 #include "PlatformADC.h"
 #include "PlatformPWM.h"
+#include "PlatformI2C.h"
 
 
 typedef enum 
