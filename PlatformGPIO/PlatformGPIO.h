@@ -14,20 +14,26 @@
 
 typedef enum
 {
+	PlatformGPIO_PTB0,
+	PlatformGPIO_PTB1,
+	PlatformGPIO_PTB2,
+	PlatformGPIO_PTB3,
+	PlatformGPIO_PTB4,
+	PlatformGPIO_PTB5,
+	PlatformGPIO_PTC0,
+	PlatformGPIO_PTC1,
+	PlatformGPIO_PTC2,
+	PlatformGPIO_PTC3,
+	PlatformGPIO_PTC4,
+	PlatformGPIO_PTC5,
+	PlatformGPIO_PTD0,
+	PlatformGPIO_PTD1,
 	PlatformGPIO_PTD2,
 	PlatformGPIO_PTD3,
 	PlatformGPIO_PTD4,
 	PlatformGPIO_PTD5,
 	PlatformGPIO_PTD6,
 	PlatformGPIO_PTD7,
-	PlatformGPIO_PTC0,
-	PlatformGPIO_PTC1,
-	PlatformGPIO_PTB0,
-	PlatformGPIO_PTB1,
-	PlatformGPIO_PTB2,
-	PlatformGPIO_PTB3,
-	PlatformGPIO_PTB4,
-	PlatformGPIO_PTB5,	
 } PlatformGPIO_t;
 
 typedef enum
@@ -37,12 +43,6 @@ typedef enum
 	PlatformGPIOConfig_Output,
 } PlatformGPIOConfig_t;
 
-/*!
- *\brief    Inits all GPIOs to their default setting, specified in PlatformGPIO.c
- *
- *\return   PlatformStatus_Success if all GPIOs were init successfully. PlatformStatus_Failed if anything failed.
- */
-PlatformStatus PlatformGPIO_InitAllGPIOs( void );
 
 /*!
  *\brief    Configures a GPIO to a setting. 

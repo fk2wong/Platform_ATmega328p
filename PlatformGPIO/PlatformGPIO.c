@@ -54,7 +54,6 @@ typedef struct
 {
 	uint8_t              portName;           // See iom328p.h for port defines
 	uint8_t              pin;            // See iom328p.h for pin defines
-	PlatformGPIOConfig_t initialConfig;  // See PlatformGPIO.h
 } PlatformGPIOStruct_t;
 
 //===========================//
@@ -64,74 +63,83 @@ typedef struct
 static const PlatformGPIOStruct_t platformGPIOList[] =
 {
 	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin0,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin1,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin2,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin3,
+	},
+	{
+		.portName      = PlatformPortB,
+	},
+	{
+		.portName      = PlatformPortB,
+		.pin           = PlatformPin5,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin0,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin1,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin2,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin3,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin4,
+	},
+	{
+		.portName      = PlatformPortC,
+		.pin           = PlatformPin5,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin0,
+	},
+	{
+		.portName      = PlatformPortD,
+		.pin           = PlatformPin1,
+	},
+	{
 		.portName      = PlatformPortD,
 		.pin           = PlatformPin2,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
 	},
 	{
 		.portName      = PlatformPortD,
 		.pin           = PlatformPin3,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
 	},
 	{
 		.portName      = PlatformPortD,
 		.pin           = PlatformPin4,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
 	},
 	{
 		.portName      = PlatformPortD,
 		.pin           = PlatformPin5,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
 	},
 	{
 		.portName      = PlatformPortD,
 		.pin           = PlatformPin6,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
 	},
 	{
 		.portName      = PlatformPortD,
 		.pin           = PlatformPin7,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortC,
-		.pin           = PlatformPin0,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortC,
-		.pin           = PlatformPin1,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortB,
-		.pin           = PlatformPin0,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortB,
-		.pin           = PlatformPin1,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortB,
-		.pin           = PlatformPin2,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortB,
-		.pin           = PlatformPin3,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},
-	{
-		.portName      = PlatformPortB,
-		.pin           = PlatformPin4,
-		.initialConfig = PlatformGPIOConfig_InputPullUp,
-	},	
-	{
-		.portName      = PlatformPortB,
-		.pin           = PlatformPin5,
-		.initialConfig = PlatformGPIOConfig_Output,
 	},
 };
 
@@ -150,22 +158,6 @@ static inline bool _PlatformGPIO_IsConfiguredAsOutput( PlatformPortRegGroup_t* i
 //====================================//
 //    Public Function Definitions     //
 //====================================//
-
-PlatformStatus PlatformGPIO_InitAllGPIOs( void )
-{
-	PlatformStatus status;
-	
-	for ( uint8_t i = 0; i < ( sizeof( platformGPIOList ) / sizeof( PlatformGPIOStruct_t )); i++ )
-	{
-		const PlatformGPIOStruct_t *const gpioStruct = &platformGPIOList[ i ];
-		
-		status = _PlatformGPIO_Configure( PLATFORM_GPIO_GET_REG_GROUP_FROM_PORT_NAME( gpioStruct->portName ), gpioStruct->pin, gpioStruct->initialConfig );
-		require_noerr_quiet( status, exit );
-	}
-	
-exit:
-	return status;
-}
 
 PlatformStatus PlatformGPIO_Configure( PlatformGPIO_t inGPIO, PlatformGPIOConfig_t inConfig )
 {
