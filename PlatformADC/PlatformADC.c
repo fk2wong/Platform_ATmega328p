@@ -9,7 +9,6 @@
 #include "PlatformClock.h"
 #include "PlatformPowerSave.h"
 #include "require_macros.h"
-#include "FQuadLogging.h"
 #include <avr/io.h>
 
 //======================//
