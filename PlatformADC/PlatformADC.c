@@ -30,8 +30,6 @@
 #define PLATFORM_ADC_MUX_REF_MASK        (( 1 << REFS0 ) | ( 1 << REFS1 ))
 #define PLATFORM_ADC_VCC_AS_AREF         ( 1 << REFS0 )
 
-#define PLATFORM_ADC_DISABLE_ALL_INPUT_BUFFERS (( 1 << ADC0D ) | ( 1 << ADC1D ) | ( 1 << ADC2D ) | ( 1 << ADC3D ) | ( 1 << ADC4D ) | ( 1 << ADC5D ))
-
 //======================//
 //   Static Variables   //
 //======================//
@@ -48,21 +46,6 @@ static uint8_t _PlatformADC_GetDivisionFactorFromPrescaler( uint8_t inPrescaler 
 //==================================//
 //   Public Function Definitions    //
 //==================================//
-
-PlatformStatus PlatformADC_DisableAllInputBuffers( void )
-{
-	PlatformStatus status = PlatformStatus_Failed;
-	
-	// This should only be called if no ADCs are initialized
-	require_quiet( mPlatformADCInitializedADCs == 0, exit );
-	
-	// Disable all input buffers
-	DIDR0 = PLATFORM_ADC_DISABLE_ALL_INPUT_BUFFERS;
-	
-	status = PlatformStatus_Success;
-exit:
-	return status;
-}
 
 PlatformStatus PlatformADC_Init( PlatformADC_t inADC )
 {
@@ -92,8 +75,11 @@ PlatformStatus PlatformADC_Init( PlatformADC_t inADC )
 		ADMUX |= PLATFORM_ADC_VCC_AS_AREF;
 	}
 	
-	// Regardless, enable the specific input buffer
-	DIDR0 &= ~PLATFORM_ADC_GET_MASK( inADC );
+	// Regardless, disable the specific input buffer to save power ( ADC6 and ADC7 do not have buffers )
+	if (( inADC != PlatformADC_ADC6 ) && ( inADC != PlatformADC_ADC7 ))
+	{
+		DIDR0 |= PLATFORM_ADC_GET_MASK( inADC );
+	}
 	
 	// Add to the list of initialized ADC inputs
 	mPlatformADCInitializedADCs |= PLATFORM_ADC_GET_MASK( inADC );
@@ -147,8 +133,11 @@ PlatformStatus PlatformADC_Deinit( PlatformADC_t inADC )
 	// Check that this ADC is initialized
 	require_quiet( mPlatformADCInitializedADCs & PLATFORM_ADC_GET_MASK( inADC ), exit );
 	
-	// Disable the specific input buffer
-	DIDR0 |= PLATFORM_ADC_GET_MASK( inADC );
+	// Enable the specific input buffer for future digital inputs (ADC6 and ADC7 do not have buffers)
+	if (( inADC != PlatformADC_ADC6 ) && ( inADC != PlatformADC_ADC7 ))
+	{
+		DIDR0 &= ~PLATFORM_ADC_GET_MASK( inADC );	
+	}
 		
 	// Remove from the list of initialized ADC inputs
 	mPlatformADCInitializedADCs &= ~PLATFORM_ADC_GET_MASK( inADC );

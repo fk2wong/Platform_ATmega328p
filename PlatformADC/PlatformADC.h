@@ -20,6 +20,8 @@ typedef enum
 	PlatformADC_ADC3,
 	PlatformADC_ADC4,
 	PlatformADC_ADC5,
+	PlatformADC_ADC6,
+	PlatformADC_ADC7,
 	PlatformADC_Max,
 } PlatformADC_t;
 
@@ -57,16 +59,5 @@ PlatformStatus PlatformADC_Read( PlatformADC_t inADC, uint16_t *const outADCValu
  *\return   PlatformStatus_Success if successful. PlatformStatus_Failed if anything failed.
  */
 PlatformStatus PlatformADC_Deinit( PlatformADC_t inADC );
-
-/*!
- *\brief    Disables all input buffers for the ADC inputs. 
- *
- *\details  This reduces power consumption for unused ADC inputs, and should be called during program initialization.
- *          The input buffer will be re-enabled when calling PlatformADC_Init() for the specific ADC input.
- *          This ensures that any non-used ADC inputs will not be consuming power.
- *
- *\return   PlatformStatus_Success if successful. PlatformStatus_Failed if anything failed.
- */
-PlatformStatus PlatformADC_DisableAllInputBuffers( void );
 
 #endif /* PLATFORMADC_H_ */
