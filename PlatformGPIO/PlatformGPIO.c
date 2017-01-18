@@ -80,6 +80,7 @@ static const PlatformGPIOStruct_t platformGPIOList[] =
 	},
 	{
 		.portName      = PlatformPortB,
+		.pin           = PlatformPin4,
 	},
 	{
 		.portName      = PlatformPortB,
