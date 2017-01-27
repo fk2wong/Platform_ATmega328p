@@ -32,6 +32,8 @@ struct PlatformRingBufferStruct
 	uint32_t tailIndex;
 	volatile uint32_t headIndex; // Can be changed in ISR
 	volatile uint8_t *buffer;    // Contents can be changed in ISR
+	
+	PlatformRingBuffer_DataReceivedCb dataReceivedCb;
 };
 
 //====================================//
@@ -43,11 +45,16 @@ static inline size_t _PlatformRingBuffer_GetNumUsedBytes( PlatformRingBuffer *co
 static inline void   _PlatformRingBuffer_UpdateHeadIndex( PlatformRingBuffer *const inRingBuffer, size_t inSizeToIncrease );
 static inline void   _PlatformRingBuffer_UpdateTailIndex( PlatformRingBuffer *const inRingBuffer, size_t inSizeToIncrease );
 
+
+static PlatformStatus _PlatformRingBuffer_Peek( PlatformRingBuffer *const inRingBuffer,
+												uint8_t *const            outData,
+												const size_t              inRequestedLen );
+
 //====================================//
 //    Public Function Definitions     //
 //====================================//
 
-PlatformRingBuffer * PlatformRingBuffer_Create( size_t inBufferSize )
+PlatformRingBuffer * PlatformRingBuffer_Create( size_t inBufferSize, PlatformRingBuffer_DataReceivedCb inOptionalDataReceivedISR )
 {
 	PlatformRingBuffer* newRingBuf    = NULL;
 	uint8_t*            newByteBuffer = NULL;
@@ -63,10 +70,11 @@ PlatformRingBuffer * PlatformRingBuffer_Create( size_t inBufferSize )
 	require_quiet( newRingBuf, exit );
 	
 	// Initialize internal struct
-	newRingBuf->bufferSize = inBufferSize + PLATFORM_RING_BUFFER_OVERHEAD_BYTES;
-	newRingBuf->headIndex  = 0;
-	newRingBuf->tailIndex  = 0;
-	newRingBuf->buffer     = newByteBuffer;
+	newRingBuf->bufferSize      = inBufferSize + PLATFORM_RING_BUFFER_OVERHEAD_BYTES;
+	newRingBuf->headIndex       = 0;
+	newRingBuf->tailIndex       = 0;
+	newRingBuf->buffer          = newByteBuffer;
+	newRingBuf->dataReceivedCb = inOptionalDataReceivedISR;
 	
 exit:
 	// If allocation for the struct failed but the byte buffer was still created, free it
@@ -116,6 +124,12 @@ PlatformStatus PlatformRingBuffer_WriteBuffer( PlatformRingBuffer *const inRingB
 	// Update the head index
 	_PlatformRingBuffer_UpdateHeadIndex( inRingBuffer, inDataLen );
 	
+	// Callback, if it exists
+	if ( inRingBuffer->dataReceivedCb )
+	{
+		inRingBuffer->dataReceivedCb( inRingBuffer, inData, inDataLen, _PlatformRingBuffer_GetNumUsedBytes( inRingBuffer ));
+	}
+	
 	status = PlatformStatus_Success;
 	
 exit:
@@ -150,6 +164,12 @@ PlatformStatus PlatformRingBuffer_WriteByte( PlatformRingBuffer* const inRingBuf
 	
 	_PlatformRingBuffer_UpdateHeadIndex( inRingBuffer, 1 );
 	
+	// Callback, if it exists
+	if ( inRingBuffer->dataReceivedCb )
+	{
+		inRingBuffer->dataReceivedCb( inRingBuffer, &inData, 1, _PlatformRingBuffer_GetNumUsedBytes( inRingBuffer ));
+	}
+	
 	status = PlatformStatus_Success;
 exit:
 	// Enable global interrupts, if we disabled them
@@ -165,9 +185,42 @@ PlatformStatus PlatformRingBuffer_ReadBuffer( PlatformRingBuffer *const inRingBu
 										      const size_t              inRequestedLen )
 {
 	PlatformStatus status = PlatformStatus_Failed;
-	size_t sizeToCopy;
-	size_t sizeCopied;
+	bool didDisableInterrupts = false;
+		
+	require_quiet( inRingBuffer,   exit );
+	require_quiet( outData,        exit );
+	require_quiet( inRequestedLen, exit );
+		
+	// Disable Global Interrupts, if enabled
+	if ( PlatformInterrupt_AreGlobalInterruptsEnabled() )
+	{
+		PlatformInterrupt_DisableGlobalInterrupts();
+		didDisableInterrupts = true;
+	}
 	
+	// Peek
+	status = _PlatformRingBuffer_Peek( inRingBuffer, outData, inRequestedLen );
+	require_noerr( status, exit );
+	
+	// Consume
+	_PlatformRingBuffer_UpdateTailIndex( inRingBuffer, inRequestedLen );
+	
+	status = PlatformStatus_Success;
+exit:
+	// Enable global interrupts if we disabled them
+	if ( didDisableInterrupts )
+	{
+		PlatformInterrupt_EnableGlobalInterrupts();
+	}
+
+	return status;
+}
+
+PlatformStatus PlatformRingBuffer_Peek( PlatformRingBuffer *const inRingBuffer,
+										uint8_t *const            outData,
+										const size_t              inRequestedLen )
+{
+	PlatformStatus status = PlatformStatus_Failed;
 	bool didDisableInterrupts = false;
 	
 	require_quiet( inRingBuffer,   exit );
@@ -180,7 +233,71 @@ PlatformStatus PlatformRingBuffer_ReadBuffer( PlatformRingBuffer *const inRingBu
 		PlatformInterrupt_DisableGlobalInterrupts();
 		didDisableInterrupts = true;
 	}
-		
+	
+	// Peek, don't consume
+	status = _PlatformRingBuffer_Peek( inRingBuffer, outData, inRequestedLen );
+	require_noerr( status, exit );
+	
+	status = PlatformStatus_Success;
+exit:
+	// Enable global interrupts if we disabled them
+	if ( didDisableInterrupts )
+	{
+		PlatformInterrupt_EnableGlobalInterrupts();
+	}
+
+	return status;
+}
+
+PlatformStatus PlatformRingBuffer_Consume( PlatformRingBuffer *const inRingBuffer,
+										   const size_t              inRequestedLen )
+{
+	PlatformStatus status = PlatformStatus_Failed;
+	bool didDisableInterrupts = false;
+	
+	require_quiet( inRingBuffer,   exit );
+	require_quiet( inRequestedLen, exit );
+	
+	// Disable Global Interrupts, if enabled
+	if ( PlatformInterrupt_AreGlobalInterruptsEnabled() )
+	{
+		PlatformInterrupt_DisableGlobalInterrupts();
+		didDisableInterrupts = true;
+	}
+	
+	// Make sure we have received at least the amount of data requested
+	require_quiet( inRequestedLen <= _PlatformRingBuffer_GetNumUsedBytes( inRingBuffer ), exit );
+	
+	// Consume
+	_PlatformRingBuffer_UpdateTailIndex( inRingBuffer, inRequestedLen );
+	
+	status = PlatformStatus_Success;
+exit:
+	// Enable global interrupts if we disabled them
+	if ( didDisableInterrupts )
+	{
+		PlatformInterrupt_EnableGlobalInterrupts();
+	}
+
+	return status;								   
+}
+
+//====================================//
+//    Static Function Definitions     //
+//====================================//
+
+static PlatformStatus _PlatformRingBuffer_Peek( PlatformRingBuffer *const inRingBuffer,
+										 uint8_t *const            outData,
+										 const size_t              inRequestedLen )
+{
+	PlatformStatus status = PlatformStatus_Failed;
+	size_t sizeToCopy;
+	size_t sizeCopied;
+	
+	require_quiet( inRingBuffer,   exit );
+	require_quiet( outData,        exit );
+	require_quiet( inRequestedLen, exit );
+	
 	// Make sure we have received at least the amount of data requested
 	require_quiet( inRequestedLen <= _PlatformRingBuffer_GetNumUsedBytes( inRingBuffer ), exit );
 
@@ -198,23 +315,10 @@ PlatformStatus PlatformRingBuffer_ReadBuffer( PlatformRingBuffer *const inRingBu
 		memcpy( &outData[ sizeCopied ], (void*)&inRingBuffer->buffer[0], sizeToCopy );
 	}
 	
-	// Update the tail ptr
-	_PlatformRingBuffer_UpdateTailIndex( inRingBuffer, inRequestedLen );
-	
 	status = PlatformStatus_Success;
 exit:
-	// Enable global interrupts if we disabled them
-	if ( didDisableInterrupts )
-	{
-		PlatformInterrupt_EnableGlobalInterrupts();
-	}
-
 	return status;
 }
-
-//====================================//
-//    Static Function Definitions     //
-//====================================//
 
 static inline size_t _PlatformRingBuffer_GetNumFreeBytes( PlatformRingBuffer *const inRingBuffer )
 {
