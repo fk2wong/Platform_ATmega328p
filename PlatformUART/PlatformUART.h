@@ -34,7 +34,7 @@ PlatformStatus PlatformUART_Init( uint32_t inBaudRate, PlatformRingBuffer *const
  *
  *\return   PlatformStatus_Success if data written successfully. PlatformStatus_Failed if anything failed.
  */
-PlatformStatus PlatformUART_Transmit( uint8_t* inBuffer, size_t inBufferLen );
+PlatformStatus PlatformUART_Transmit( void* const inBuffer, size_t inBufferLen );
 
 /*!
  *\brief    Receives data over UART.

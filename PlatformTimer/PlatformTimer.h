@@ -18,7 +18,7 @@
 
 PlatformStatus PlatformTimer_Init( void );
 
-PlatformStatus PlatformTimer_GetTime( uint64_t * const outTime );
+PlatformStatus PlatformTimer_GetTime( uint32_t * const outTime );
 
 PlatformStatus PlatformTimer_Reset( void );
 

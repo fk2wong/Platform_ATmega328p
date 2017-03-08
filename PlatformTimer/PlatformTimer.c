@@ -16,7 +16,7 @@
 
 static bool mPlatformTimerInitialized;
 static bool mPlatformTimerEnabledGlobalInterrupts;
-static uint64_t mPlatformTimerCurrentMilliseconds;
+static uint32_t mPlatformTimerCurrentMilliseconds;
 
 PlatformStatus PlatformTimer_Init( void )
 {
@@ -61,7 +61,8 @@ exit:
 	return status; 
 }
 
-PlatformStatus PlatformTimer_GetTime( uint64_t * const outTime )
+PlatformStatus PlatformTimer_GetTime( uint32_t * const outTime )
+
 {
 	PlatformStatus status = PlatformStatus_NotInitialized;
 	
@@ -124,7 +125,5 @@ exit:
 ISR( TIMER1_COMPA_vect )
 {
 	// Update the millisecond count
-	PlatformInterrupt_DisableGlobalInterrupts();
 	mPlatformTimerCurrentMilliseconds++;
-	PlatformInterrupt_EnableGlobalInterrupts();
 }

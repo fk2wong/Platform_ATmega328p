@@ -87,7 +87,7 @@ exit:
 	return status;
 }
 
-PlatformStatus PlatformUART_Transmit( uint8_t* inBuffer, size_t inBufferLen )
+PlatformStatus PlatformUART_Transmit( void* const inBuffer, size_t inBufferLen )
 {
 	PlatformStatus status = PlatformStatus_Failed;
 	
@@ -102,7 +102,7 @@ PlatformStatus PlatformUART_Transmit( uint8_t* inBuffer, size_t inBufferLen )
 	for ( uint8_t i = 0; i < inBufferLen; i++ )
 	{	
 		// Place next byte into I/O data register
-		UDR0 = inBuffer[i];
+		UDR0 = (( uint8_t* )inBuffer )[i];
 		
 		// Wait for the data register to be empty before sending it the next byte
 		while( !PLATFORM_UART_DATA_REG_EMPTY );
