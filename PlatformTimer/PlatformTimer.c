@@ -65,35 +65,57 @@ PlatformStatus PlatformTimer_GetTime( uint32_t * const outTime )
 
 {
 	PlatformStatus status = PlatformStatus_NotInitialized;
+	bool didDisableInterrupts = false;
 	
 	// Check if initialized
 	require_quiet( mPlatformTimerInitialized, exit );
 	require_quiet( outTime, exit );
 	
+	// Disable Global Interrupts, if enabled
+	if ( PlatformInterrupt_AreGlobalInterruptsEnabled() )
+	{
+		PlatformInterrupt_DisableGlobalInterrupts();
+		didDisableInterrupts = true;
+	}
+	
 	// Read millisecond count
-	PlatformInterrupt_DisableGlobalInterrupts();
 	*outTime = mPlatformTimerCurrentMilliseconds;
-	PlatformInterrupt_EnableGlobalInterrupts();
 	
 	status = PlatformStatus_Success;
 exit:
+	// Enable global interrupts, if we disabled them
+	if ( didDisableInterrupts )
+	{
+		PlatformInterrupt_EnableGlobalInterrupts();
+	}
 	return status;
 }
 
 PlatformStatus PlatformTimer_Reset( void )
 {
 	PlatformStatus status = PlatformStatus_NotInitialized;
-		
+	bool didDisableInterrupts = false;
+	
 	// Check if initialized
 	require_quiet( mPlatformTimerInitialized, exit );
+	
+	// Disable Global Interrupts, if enabled
+	if ( PlatformInterrupt_AreGlobalInterruptsEnabled() )
+	{
+		PlatformInterrupt_DisableGlobalInterrupts();
+		didDisableInterrupts = true;
+	}
 		
 	// Reset millisecond count
-	PlatformInterrupt_DisableGlobalInterrupts();
 	mPlatformTimerCurrentMilliseconds = 0;
-	PlatformInterrupt_EnableGlobalInterrupts();
 		
 	status = PlatformStatus_Success;
 exit:
+	// Enable global interrupts, if we disabled them
+	if ( didDisableInterrupts )
+	{
+		PlatformInterrupt_EnableGlobalInterrupts();
+	}
 	return status;
 }
 
