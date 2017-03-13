@@ -8,7 +8,7 @@
 #ifndef PLATFORMCLOCK_H_
 #define PLATFORMCLOCK_H_
 
-#define F_CPU 8000000 // Define CPU clock speed to be 16MHz
+#define F_CPU 8000000 // Define CPU clock speed to be 8MHz
 
 
 #endif /* PLATFORMCLOCK_H_ */
